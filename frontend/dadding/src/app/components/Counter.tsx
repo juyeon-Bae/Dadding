@@ -12,7 +12,7 @@ const CounterContainer = styled.div`
 const CounterButton = styled.button`
   padding: 10px;
   background-color: ${({ theme }) => theme.primary};
-  color: white;
+  color: black;
   border: none;
   border-radius: 5px;
   cursor: pointer;
