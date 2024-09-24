@@ -1,212 +1,90 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
-import { FirebaseService } from 'src/firebase/firebase.service';
+import { TagRepository } from './tag.repository';
+import { Tag } from './entities/tag.entity';
+import { ResponseStrategy } from '../shared/strategies/response.strategy';
 
 @Injectable()
 export class TagService {
-  constructor(private firebaseService: FirebaseService) {}
+  constructor(
+    private tagRepository: TagRepository,
+    private responseStrategy: ResponseStrategy,
+  ) {}
 
   async create(createTagDto: CreateTagDto) {
     try {
-      const postsString = Array.isArray(createTagDto.posts)
-        ? createTagDto.posts.join(',')
-        : createTagDto.posts;
-
-      const tagRef = await this.firebaseService
-        .getFirestore()
-        .collection('tags')
-        .add({
-          ...createTagDto,
-          posts: postsString,
-        });
-
-      return {
-        status: HttpStatus.CREATED,
-        timeStamp: new Date().toISOString(),
-        message: 'Tag created successfully',
-        data: {
-          id: tagRef.id,
-          ...createTagDto,
-          posts: postsString,
-        },
+      const tag: Tag = {
+        ...createTagDto,
+        posts: this.formatPosts(createTagDto.posts),
       };
+      const id = await this.tagRepository.create(tag);
+      return this.responseStrategy.success('Tag created successfully', {
+        id,
+        ...tag,
+      });
     } catch (error) {
-      throw new HttpException(
-        {
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
-          timeStamp: new Date().toISOString(),
-          message: 'Failed to create tag',
-          error: error.message,
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return this.responseStrategy.error('Failed to create tag', error);
     }
   }
 
   async findAll() {
     try {
-      const snapshot = await this.firebaseService
-        .getFirestore()
-        .collection('tags')
-        .get();
-
-      const tags = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-
-      if (tags.length === 0) {
-        return {
-          status: HttpStatus.NO_CONTENT,
-          timeStamp: new Date().toISOString(),
-          message: 'No tags found',
-          data: [],
-        };
-      }
-
-      return {
-        status: HttpStatus.OK,
-        timeStamp: new Date().toISOString(),
-        message: 'Posts retrieved successfully',
-        data: tags,
-      };
+      const tags = await this.tagRepository.findAll();
+      return tags.length === 0
+        ? this.responseStrategy.noContent('No tags found')
+        : this.responseStrategy.success('Tags retrieved successfully', tags);
     } catch (error) {
-      throw new HttpException(
-        {
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
-          timeStamp: new Date().toISOString(),
-          message: 'Failed to retrieve posts',
-          error: error.message,
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return this.responseStrategy.error('Failed to retrieve tags', error);
     }
   }
 
   async findOne(id: string) {
     try {
-      const tagRef = this.firebaseService
-        .getFirestore()
-        .collection('tags')
-        .doc(id);
-
-      const doc = await tagRef.get();
-
-      if (!doc.exists) {
-        throw new HttpException(
-          {
-            status: HttpStatus.NOT_FOUND,
-            timeStamp: new Date().toISOString(),
-            message: 'Tag not found',
-          },
-          HttpStatus.NOT_FOUND,
-        );
-      }
-
-      return {
-        status: HttpStatus.OK,
-        timeStamp: new Date().toISOString(),
-        message: 'Tag retrieved successfully',
-        data: { id: doc.id, ...doc.data() },
-      };
+      const tag = await this.tagRepository.findOne(id);
+      return tag
+        ? this.responseStrategy.success('Tag retrieved successfully', tag)
+        : this.responseStrategy.notFound('Tag not found');
     } catch (error) {
-      throw new HttpException(
-        {
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
-          timeStamp: new Date().toISOString(),
-          message: 'Failed to retrieve tag',
-          error: error.message,
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return this.responseStrategy.error('Failed to retrieve tag', error);
     }
   }
 
   async update(id: string, updateTagDto: UpdateTagDto) {
     try {
-      const tagRef = this.firebaseService
-        .getFirestore()
-        .collection('tags')
-        .doc(id);
-
-      const doc = await tagRef.get();
-
-      if (!doc.exists) {
-        throw new HttpException(
-          {
-            status: HttpStatus.NOT_FOUND,
-            timeStamp: new Date().toISOString(),
-            message: 'Tag not found',
-          },
-          HttpStatus.NOT_FOUND,
-        );
+      const existingTag = await this.tagRepository.findOne(id);
+      if (!existingTag) {
+        return this.responseStrategy.notFound('Tag not found');
       }
-
-      const postsString = Array.isArray(updateTagDto.posts)
-        ? updateTagDto.posts.join(',')
-        : updateTagDto.posts;
-
-      const dataToUpdate = {
+      const updatedTag: Partial<Tag> = {
         ...updateTagDto,
-        posts: postsString,
+        posts: this.formatPosts(updateTagDto.posts),
       };
-
-      await tagRef.update(dataToUpdate);
-
-      const updatedDoc = await tagRef.get();
-
-      return {
-        status: HttpStatus.OK,
-        timeStamp: new Date().toISOString(),
-        message: 'Tag updated successfully',
-        data: { id: updatedDoc.id, ...updatedDoc.data() },
-      };
+      await this.tagRepository.update(id, updatedTag);
+      return this.responseStrategy.success('Tag updated successfully', {
+        id,
+        ...existingTag,
+        ...updatedTag,
+      });
     } catch (error) {
-      throw new HttpException(
-        {
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
-          timeStamp: new Date().toISOString(),
-          message: 'Failed to update tag',
-          error: error.message,
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return this.responseStrategy.error('Failed to update tag', error);
     }
   }
 
   async remove(id: string) {
     try {
-      const tagRef = this.firebaseService
-        .getFirestore()
-        .collection('tags')
-        .doc(id);
-      const doc = await tagRef.get();
-
-      if (!doc.exists) {
-        throw new HttpException(
-          {
-            status: HttpStatus.NOT_FOUND,
-            timeStamp: new Date().toISOString(),
-            message: 'Tag not found',
-          },
-          HttpStatus.NOT_FOUND,
-        );
+      const existingTag = await this.tagRepository.findOne(id);
+      if (!existingTag) {
+        return this.responseStrategy.notFound('Tag not found');
       }
-
-      await tagRef.delete();
-      return {
-        status: HttpStatus.OK,
-        timeStamp: new Date().toISOString(),
-        message: 'Tag deleted successfully',
-      };
+      await this.tagRepository.remove(id);
+      return this.responseStrategy.success('Tag deleted successfully');
     } catch (error) {
-      throw new HttpException(
-        {
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
-          timeStamp: new Date().toISOString(),
-          message: 'Failed to delete tag',
-          error: error.message,
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return this.responseStrategy.error('Failed to delete tag', error);
     }
+  }
+
+  private formatPosts(posts: string | string[]): string {
+    return Array.isArray(posts) ? posts.join(',') : posts;
   }
 }

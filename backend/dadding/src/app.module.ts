@@ -4,13 +4,15 @@ import { PostModule } from './post/post.module';
 import { ConfigModule } from '@nestjs/config';
 import { ApiKeyMiddleware } from './api-key.middleware';
 import { TagModule } from './tag/tag.module';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     FirebaseModule,
     PostModule,
-    ConfigModule.forRoot({ isGlobal: true }),
     TagModule,
+    UserModule,
   ],
   controllers: [],
   providers: [],
