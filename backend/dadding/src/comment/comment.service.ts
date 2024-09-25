@@ -84,9 +84,9 @@ export class CommentService {
     }
   }
 
-  async findOne(id: string) {
+  async findOne(documentId: string) {
     try {
-      const comment = await this.commentRepository.findOne(id);
+      const comment = await this.commentRepository.findOne(documentId);
       if (!comment) {
         return this.responseStrategy.notFound('Comment not found');
       }
@@ -154,13 +154,13 @@ export class CommentService {
     }
   }
 
-  async remove(id: string) {
+  async remove(documentId: string) {
     try {
-      const existingComment = await this.commentRepository.findOne(id);
+      const existingComment = await this.commentRepository.findOne(documentId);
       if (!existingComment) {
         return this.responseStrategy.notFound('Comment not found');
       }
-      await this.commentRepository.remove(id);
+      await this.commentRepository.remove(documentId);
       return this.responseStrategy.success('Comment deleted successfully');
     } catch (error) {
       return this.responseStrategy.error('Failed to delete Comment', error);
