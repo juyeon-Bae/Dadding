@@ -6,6 +6,9 @@ import { ApiKeyMiddleware } from './api-key.middleware';
 import { TagModule } from './tag/tag.module';
 import { UserModule } from './user/user.module';
 import { CommentModule } from './comment/comment.module';
+import { ChatGateway } from './chat/chat.gateway';
+import { MessageModule } from './message/message.module';
+import { ChatRoomModule } from './chat-room/chat-room.module';
 
 @Module({
   imports: [
@@ -15,9 +18,11 @@ import { CommentModule } from './comment/comment.module';
     TagModule,
     UserModule,
     CommentModule,
+    MessageModule,
+    ChatRoomModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [ChatGateway],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {

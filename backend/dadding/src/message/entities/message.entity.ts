@@ -1,8 +1,8 @@
-export class Comment {
+export class Message {
   id?: string;
-  comments: string;
+  messages: string;
 }
-export interface CommentData {
+export interface MessageData {
   id: string;
   userUid: string;
   content: string;
