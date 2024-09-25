@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ApiKeyMiddleware } from './api-key.middleware';
 import { TagModule } from './tag/tag.module';
 import { UserModule } from './user/user.module';
+import { CommentModule } from './comment/comment.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { UserModule } from './user/user.module';
     PostModule,
     TagModule,
     UserModule,
+    CommentModule,
   ],
   controllers: [],
   providers: [],
