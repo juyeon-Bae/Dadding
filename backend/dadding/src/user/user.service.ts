@@ -1,14 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { UserRepository } from './user.repository';
 import { User } from './entities/user.entity';
 import { ResponseStrategy } from '../shared/strategies/response.strategy';
+import { AppRepository } from 'src/app.repository';
 
 @Injectable()
 export class UserService {
   constructor(
-    private userRepository: UserRepository,
+    @Inject('USER_REPOSITORY')
+    private userRepository: AppRepository<User>,
     private responseStrategy: ResponseStrategy,
   ) {}
 

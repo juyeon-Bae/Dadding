@@ -1,14 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { PostRepository } from './post.repository';
 import { Post } from './entities/post.entity';
 import { ResponseStrategy } from '../shared/strategies/response.strategy';
+import { AppRepository } from 'src/app.repository';
 
 @Injectable()
 export class PostService {
   constructor(
-    private postRepository: PostRepository,
+    @Inject('POST_REPOSITORY')
+    private postRepository: AppRepository<Post>,
     private responseStrategy: ResponseStrategy,
   ) {}
 

@@ -1,14 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
-import { TagRepository } from './tag.repository';
-import { Tag } from './entities/tag.entity';
 import { ResponseStrategy } from '../shared/strategies/response.strategy';
+import { AppRepository } from 'src/app.repository';
+import { Tag } from './entities/tag.entity';
 
 @Injectable()
 export class TagService {
   constructor(
-    private tagRepository: TagRepository,
+    @Inject('TAG_REPOSITORY')
+    private tagRepository: AppRepository<Tag>,
     private responseStrategy: ResponseStrategy,
   ) {}
 
