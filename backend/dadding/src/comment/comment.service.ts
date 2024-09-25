@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ResponseStrategy } from '../shared/strategies/response.strategy';
-import { Comment } from './entities/comment.entity';
+import { Comment, CommentData } from './entities/comment.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 import { CommentRepository } from './comment.repository';
@@ -14,26 +14,24 @@ export class CommentService {
     private firebaseService: FirebaseService,
   ) {}
 
-  private encodeArray(array: any[]): string {
-    return btoa(JSON.stringify(array));
+  private encodeComments(comments: CommentData[]): string {
+    return Buffer.from(JSON.stringify(comments)).toString('base64');
   }
 
-  private decodeArray(encodedString: string): any[] {
+  private decodeComments(encodedString: string): CommentData[] {
     try {
-      return JSON.parse(atob(encodedString));
+      return JSON.parse(Buffer.from(encodedString, 'base64').toString());
     } catch (error) {
-      console.error('Error decoding string:', error);
+      console.error('Error decoding comments:', error);
       return [];
     }
   }
 
   private async getUpdatedComment(
-    id: string,
-    updatedComments: Comment[],
+    documentId: string,
+    updatedComments: CommentData[],
   ): Promise<Partial<Comment>> {
-    return {
-      comments: this.encodeArray(updatedComments),
-    };
+    return { comments: this.encodeComments(updatedComments) };
   }
 
   async create(createCommentDto: CreateCommentDto, documentId: string) {
@@ -42,30 +40,28 @@ export class CommentService {
         .getFirestore()
         .collection('comments')
         .doc().id;
-
       const existingComment = await this.commentRepository.findOne(documentId);
-      const initialComments = existingComment
-        ? this.decodeArray(existingComment.comments)
+      const comments = existingComment
+        ? this.decodeComments(existingComment.comments)
         : [];
 
-      const newComment = {
+      const newComment: CommentData = {
         ...createCommentDto,
         id: newCommentId,
         createdAt: new Date(),
         updatedAt: null,
       };
 
-      const comment: Comment = {
-        comments: this.encodeArray([...initialComments, newComment]),
+      const updatedComment: Comment = {
+        comments: this.encodeComments([...comments, newComment]),
       };
 
-      await this.commentRepository.create(comment, documentId);
+      await this.commentRepository.create(updatedComment, documentId);
       return this.responseStrategy.success('Comment created successfully', {
         documentId,
-        ...comment,
+        ...updatedComment,
       });
     } catch (error) {
-      console.error(error);
       return this.responseStrategy.error('Failed to create comment', error);
     }
   }
@@ -73,12 +69,16 @@ export class CommentService {
   async findAll() {
     try {
       const comments = await this.commentRepository.findAll();
-      return comments.length === 0
-        ? this.responseStrategy.noContent('No comments found')
-        : this.responseStrategy.success(
-            'Comments retrieved successfully',
-            comments.map((comment) => this.decodeArray(comment.comments)),
-          );
+      if (comments.length === 0) {
+        return this.responseStrategy.noContent('No comments found');
+      }
+      const decodedComments = comments.map((comment) =>
+        this.decodeComments(comment.comments),
+      );
+      return this.responseStrategy.success(
+        'Comments retrieved successfully',
+        decodedComments,
+      );
     } catch (error) {
       return this.responseStrategy.error('Failed to retrieve comments', error);
     }
@@ -87,60 +87,65 @@ export class CommentService {
   async findOne(id: string) {
     try {
       const comment = await this.commentRepository.findOne(id);
-      return comment
-        ? this.responseStrategy.success(
-            'Comment retrieved successfully',
-            this.decodeArray(comment.comments),
-          )
-        : this.responseStrategy.notFound('Comment not found');
+      if (!comment) {
+        return this.responseStrategy.notFound('Comment not found');
+      }
+      const decodedComments = this.decodeComments(comment.comments);
+      return this.responseStrategy.success(
+        'Comment retrieved successfully',
+        decodedComments,
+      );
     } catch (error) {
       return this.responseStrategy.error('Failed to retrieve comment', error);
     }
   }
 
-  async findOneByCommentId(id: string, commentId: string) {
+  async findOneByCommentId(documentId: string, commentId: string) {
     try {
-      const existingComment = await this.commentRepository.findOne(id);
-      const comment = await this.commentRepository.findOne(id);
-      return comment &&
-        this.decodeArray(existingComment.comments).every(
-          (comment) => comment.id === commentId,
-        )
-        ? this.responseStrategy.success(
-            'Comment retrieved successfully',
-            this.decodeArray(comment.comments).filter(
-              (comment) => comment.id === commentId,
-            ),
-          )
-        : this.responseStrategy.notFound('Comment not found');
+      const comment = await this.commentRepository.findOne(documentId);
+      if (!comment) {
+        return this.responseStrategy.notFound('Comment not found');
+      }
+      const decodedComments = this.decodeComments(comment.comments);
+      const foundComment = decodedComments.find((c) => c.id === commentId);
+      if (!foundComment) {
+        return this.responseStrategy.notFound('Comment not found');
+      }
+      return this.responseStrategy.success(
+        'Comment retrieved successfully',
+        foundComment,
+      );
     } catch (error) {
       return this.responseStrategy.error('Failed to retrieve comment', error);
     }
   }
 
   async update(
-    id: string,
+    documentId: string,
     updateCommentDto: UpdateCommentDto,
     commentId: string,
   ) {
     try {
-      const existingComment = await this.commentRepository.findOne(id);
+      const existingComment = await this.commentRepository.findOne(documentId);
       if (!existingComment) {
         return this.responseStrategy.notFound('Comment not found');
       }
 
-      const updatedComments = this.decodeArray(existingComment.comments).map(
+      const updatedComments = this.decodeComments(existingComment.comments).map(
         (comment) =>
           comment.id === commentId
             ? { ...comment, ...updateCommentDto, updatedAt: new Date() }
             : comment,
       );
 
-      const updatedComment = await this.getUpdatedComment(id, updatedComments);
+      const updatedComment = await this.getUpdatedComment(
+        documentId,
+        updatedComments,
+      );
+      await this.commentRepository.update(documentId, updatedComment);
 
-      await this.commentRepository.update(id, updatedComment);
       return this.responseStrategy.success('Comment updated successfully', {
-        id,
+        id: documentId,
         ...existingComment,
         ...updatedComment,
       });
@@ -162,30 +167,30 @@ export class CommentService {
     }
   }
 
-  async removeByCommentId(id: string, commentId: string) {
+  async removeByCommentId(documentId: string, commentId: string) {
     try {
-      const existingComment = await this.commentRepository.findOne(id);
-      if (
-        !existingComment ||
-        this.decodeArray(existingComment.comments).every(
-          (comment) => comment.id !== commentId,
-        )
-      ) {
+      const existingComment = await this.commentRepository.findOne(documentId);
+      if (!existingComment) {
         return this.responseStrategy.notFound('Comment not found');
       }
 
-      const updatedComments = this.decodeArray(existingComment.comments).filter(
+      const comments = this.decodeComments(existingComment.comments);
+      const updatedComments = comments.filter(
         (comment) => comment.id !== commentId,
       );
 
+      if (updatedComments.length === comments.length) {
+        return this.responseStrategy.notFound('Comment not found');
+      }
+
       if (updatedComments.length === 0) {
-        await this.commentRepository.remove(id);
+        await this.commentRepository.remove(documentId);
       } else {
         const updatedComment = await this.getUpdatedComment(
-          id,
+          documentId,
           updatedComments,
         );
-        await this.commentRepository.update(id, updatedComment);
+        await this.commentRepository.update(documentId, updatedComment);
       }
 
       return this.responseStrategy.success('Comment deleted successfully');
