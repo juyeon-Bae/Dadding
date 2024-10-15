@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_svg/svg.dart';
 
 class MyBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
@@ -14,48 +13,31 @@ class MyBottomNavigationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect( 
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(15),
-        topRight: Radius.circular(15),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: const Color(0xFFE8E8E8),
-            width: 2.0,
-          ),
+    return BottomNavigationBar(
+      backgroundColor: const Color(0xffffffff),
+      currentIndex: currentIndex,
+      onTap: onTap,
+      type: BottomNavigationBarType.fixed,
+      items: const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home),
+          label: "홈",
         ),
-        child: SizedBox(
-          height: 78,
-          child: BottomNavigationBar(
-            backgroundColor: const Color(0xFFFFFFFF),
-            currentIndex: currentIndex,
-            onTap: onTap,
-            items: [
-              BottomNavigationBarItem(
-                icon: SvgPicture.asset(
-                  'assets/icons/my.svg',
-                  width: 28,
-                  height: 28,
-                  color: currentIndex == 0 ? const Color(0xff0062FF) : null,
-                ),
-                label: "마이페이지",
-              ),
-              BottomNavigationBarItem(
-                icon: SvgPicture.asset(
-                  'assets/icons/message.svg',
-                  width: 28,
-                  height: 28,
-                  color: currentIndex == 1 ? const Color(0xff0062FF) : null,
-                ),
-                label: "채팅",
-              ),
-            ],
-            selectedItemColor: const Color(0xff0062FF),
-          ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.location_on),
+          label: "게시글",
         ),
-      ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.chat),
+          label: "채팅",
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.people),
+          label: "마이페이지",
+        ),
+      ],
+      selectedItemColor: const Color(0xff3B6DFF),
+      unselectedItemColor: const Color(0xffD1D2D1),
     );
   }
 }

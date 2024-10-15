@@ -1,4 +1,5 @@
 import 'package:dadding/pages/main/ChatPage.dart';
+import 'package:dadding/pages/main/HomePage.dart';
 import 'package:dadding/pages/main/PostPage.dart';
 import 'package:dadding/pages/main/ProfilePage.dart';
 import 'package:dadding/widgets/MyBottomNavigationBar.dart';
@@ -15,6 +16,7 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   int _currentIndex = 0;
   final pages = [
+    const HomePage(),
     const PostPage(),
     const ChatPage(),
     const ProfilePage(),
