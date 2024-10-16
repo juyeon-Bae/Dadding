@@ -6,20 +6,20 @@
     "configurations": [
         {
             "name": "dadding",
-            "cwd": "webview/dadding",
+            "cwd": "frontend/dadding",
             "request": "launch",
             "type": "dart"
         },
         {
             "name": "dadding (profile mode)",
-            "cwd": "webview/dadding",
+            "cwd": "frontend/dadding",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
             "name": "dadding (release mode)",
-            "cwd": "webview/dadding",
+            "cwd": "frontend/dadding",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"
