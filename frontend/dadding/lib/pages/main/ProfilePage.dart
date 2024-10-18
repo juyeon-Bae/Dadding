@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -252,13 +253,23 @@ class PostCard extends StatelessWidget {
               const Spacer(),
               TextButton(
                 onPressed: () {},
-                child: const Text(
-                  '더보기',
-                  style: TextStyle(
-                    color: Color(0xFFAAAAAA),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                  ),
+                child: Row(
+                  children: [
+                    const Text(
+                      '더보기',
+                      style: TextStyle(
+                        color: Color(0xFFAAAAAA),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    SvgPicture.asset(
+                      'assets/icons/arrow.svg',
+                      width: 15,
+                      height: 15,
+                    ),
+                  ]
                 ),
               ),
             ],
