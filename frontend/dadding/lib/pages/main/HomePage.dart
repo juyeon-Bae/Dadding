@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -104,7 +105,7 @@ class UserTags extends StatelessWidget {
 class UserTag extends StatelessWidget {
   final String label;
 
-  const UserTag({Key? key, required this.label}) : super(key: key);
+  const UserTag({super.key, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -250,13 +251,23 @@ class PostCard extends StatelessWidget {
               const Spacer(),
               TextButton(
                 onPressed: () {},
-                child: const Text(
-                  '더보기',
-                  style: TextStyle(
-                    color: Color(0xFFAAAAAA),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                  ),
+                child: Row(
+                  children: [
+                    const Text(
+                      '더보기',
+                      style: TextStyle(
+                        color: Color(0xFFAAAAAA),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    SvgPicture.asset(
+                      'assets/icons/arrow.svg',
+                      width: 15,
+                      height: 15,
+                    ),
+                  ]
                 ),
               ),
             ],
@@ -266,6 +277,7 @@ class PostCard extends StatelessWidget {
     );
   }
 }
+
 
 class Post {
   final String title;
